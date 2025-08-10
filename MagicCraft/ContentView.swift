@@ -7,29 +7,32 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
-    
-    @StateObject var appVM = MagicCraftAppViewModel()
-    
-    var body: some View {
-        switch appVM.appState {
-        case .onboarding:
-            WalletOnboardingView()
-                .environmentObject(appVM)
-        case .dashboard:
-            if let walletAddress = appVM.walletAddress {
-                    DashboardView(walletAddress: walletAddress)
-                } else {
-                    Text("No wallet address available")
-                        .foregroundColor(.red)
-                }
-        }
-        
-    }
-    
-    
-}
-
-#Preview {
-    ContentView()
-}
+//struct ContentView: View {
+//    @StateObject var appVM = MagicCraftAppViewModel()
+//
+//    var body: some View {
+//        Group {
+//            if !appVM.isBiometricUnlocked {
+//                UnlockView(onUnlock: appVM.unlockWithBiometrics)
+//                    .environmentObject(appVM)
+//            }
+//            else if let walletAddress = appVM.walletAddress {
+//                DashboardView(walletAddress: walletAddress)
+//                    .onAppear {
+////                        KeychainManager.shared.delete(
+////                            service: KeychainConstants.service,
+////                            account: KeychainConstants.account
+////                        )
+//                    }
+//            }
+//            else {
+//                WalletOnboardingView()
+//                    .environmentObject(appVM)
+//            }
+//        }
+//    }
+//}
+//
+//#Preview {
+//    ContentView()
+//}
