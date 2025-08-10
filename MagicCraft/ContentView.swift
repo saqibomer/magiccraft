@@ -23,11 +23,6 @@ struct ContentView: View {
                     Text("No wallet address available")
                         .foregroundColor(.red)
                 }
-            // MARK: - Test code to reset keychain
-//                .onAppear {
-//                    KeychainManager.shared.delete(service: KeychainConstants.service, account: KeychainConstants.account)
-//                    appVM.checkWalletExistence()
-//                }
         }
         
     }

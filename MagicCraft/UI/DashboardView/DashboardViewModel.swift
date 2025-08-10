@@ -10,7 +10,7 @@ import Combine
 import web3swift
 import Web3Core
 import BigInt
-//526da39fa0f8458aad9da12c9f5eb7d3
+
 @MainActor
 class DashboardViewModel: ObservableObject {
     @Published var nativeBalances: [TokenBalance] = []
@@ -25,19 +25,19 @@ class DashboardViewModel: ObservableObject {
             name: "Ethereum",
             rpcUrl: "https://mainnet.infura.io/v3/526da39fa0f8458aad9da12c9f5eb7d3",
             nativeSymbol: "ETH",
-            mcrtContractAddress: "0xYourEthereumMCRTContract",
+            mcrtContractAddress: "0xde16ce60804a881e9f8c4ebb3824646edecd478d",
             explorerTxUrlPrefix: "https://etherscan.io/tx/"),
         Chain(
             name: "Binance Smart Chain",
             rpcUrl: "https://bsc-dataseed.binance.org/",
             nativeSymbol: "BNB",
-            mcrtContractAddress: "0xYourBSCMCRTContract",
+            mcrtContractAddress: "0x4b8285aB433D8f69CB48d5Ad62b415ed1a221e4f",
             explorerTxUrlPrefix: "https://bscscan.com/tx/"),
         Chain(
             name: "Polygon",
             rpcUrl: "https://polygon-rpc.com/",
             nativeSymbol: "MATIC",
-            mcrtContractAddress: "0xYourPolygonMCRTContract",
+            mcrtContractAddress: "", //no MCRT contract on Polygon
             explorerTxUrlPrefix: "https://polygonscan.com/tx/")
     ]
     
@@ -78,34 +78,51 @@ class DashboardViewModel: ObservableObject {
                 // Fetch native balance
                 let nativeBalanceBigUInt = try await network.web3.eth.getBalance(for: walletAddress)
                 let nativeBalanceDecimal = formatBalance(nativeBalanceBigUInt)
-                let nativeTokenBalance = TokenBalance(chainName: network.network.name, symbol: network.network.nativeSymbol, balance: nativeBalanceDecimal)
+                let nativeTokenBalance = TokenBalance(
+                    chainName: network.network.name,
+                    symbol: network.network.nativeSymbol,
+                    balance: nativeBalanceDecimal
+                )
                 DispatchQueue.main.async {
                     self.nativeBalances.append(nativeTokenBalance)
                 }
                 
-                // Fetch MCRT (ERC20) balance
-                if let contract = network.web3.contract(Web3.Utils.erc20ABI, at: EthereumAddress(network.network.mcrtContractAddress)) {
-                    guard let operation = contract.createReadOperation("balanceOf", parameters: [walletAddress]) else {
-                        continue
-                    }
-                    let result = try await operation.callContractMethod()
-                    guard let balance = result["balance"] as? BigUInt else {
-                        continue
-                    }
-                    let mcrtBalanceDecimal = formatBalance(balance)
-                    let mcrtTokenBalance = TokenBalance(chainName: network.network.name, symbol: "MCRT", balance: mcrtBalanceDecimal)
-                    DispatchQueue.main.async {
-                        self.mcrtBalances.append(mcrtTokenBalance)
+                // Fetch MCRT balance only if contract address is set
+                if !network.network.mcrtContractAddress.isEmpty,
+                   let contractAddress = EthereumAddress(network.network.mcrtContractAddress),
+                   let contract = network.web3.contract(Web3.Utils.erc20ABI, at: contractAddress),
+                   let operation = contract.createReadOperation("balanceOf", parameters: [walletAddress]) {
+                    
+                    do {
+                        let result = try await operation.callContractMethod()
+                        
+                        // Both "balance" and "0" keys for compatibility
+                        let rawBalance = result["balance"] ?? result["0"]
+                        if let balance = rawBalance as? BigUInt {
+                            let mcrtBalanceDecimal = formatBalance(balance)
+                            let mcrtTokenBalance = TokenBalance(
+                                chainName: network.network.name,
+                                symbol: "MCRT",
+                                balance: mcrtBalanceDecimal
+                            )
+                            DispatchQueue.main.async {
+                                self.mcrtBalances.append(mcrtTokenBalance)
+                            }
+                        }
+                    } catch {
+                        print("MCRT fetch failed for \(network.network.name): \(error.localizedDescription)")
                     }
                 }
                 
             } catch {
                 DispatchQueue.main.async {
+                    print("Failed to fetch balances for \(network.network.name): \(error.localizedDescription)")
                     self.errorMessage = "Failed to fetch balances for \(network.network.name): \(error.localizedDescription)"
                 }
             }
         }
     }
+    
     
     private func formatBalance(_ balance: BigUInt, decimals: Int = 18) -> Decimal {
         let divisor = BigUInt(10).power(decimals)
