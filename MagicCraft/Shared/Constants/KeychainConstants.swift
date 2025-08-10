@@ -8,4 +8,7 @@
 struct KeychainConstants {
     static let service = "com.kaboomlab.MagicCraft"
     static let account = "mnemonic"
+    
+    static let etherscanService = "com.magiccraft.etherscan"
+    static let etherscanAccount = "etherscan.api.key"
 }
