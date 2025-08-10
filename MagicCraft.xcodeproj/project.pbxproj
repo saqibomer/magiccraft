@@ -10,6 +10,7 @@
 		AAE92FD22E488C64003C8365 /* WalletCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAE92FD12E488C64003C8365 /* WalletCore */; };
 		AAE92FD42E488C64003C8365 /* WalletCoreSwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = AAE92FD32E488C64003C8365 /* WalletCoreSwiftProtobuf */; };
 		AAE92FE52E4890A1003C8365 /* NotificationBannerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AAE92FE42E4890A1003C8365 /* NotificationBannerSwift */; };
+		AAE92FF62E48A546003C8365 /* web3swift in Frameworks */ = {isa = PBXBuildFile; productRef = AAE92FF52E48A546003C8365 /* web3swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 				AAE92FD22E488C64003C8365 /* WalletCore in Frameworks */,
 				AAE92FE52E4890A1003C8365 /* NotificationBannerSwift in Frameworks */,
 				AAE92FD42E488C64003C8365 /* WalletCoreSwiftProtobuf in Frameworks */,
+				AAE92FF62E48A546003C8365 /* web3swift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +126,7 @@
 				AAE92FD12E488C64003C8365 /* WalletCore */,
 				AAE92FD32E488C64003C8365 /* WalletCoreSwiftProtobuf */,
 				AAE92FE42E4890A1003C8365 /* NotificationBannerSwift */,
+				AAE92FF52E48A546003C8365 /* web3swift */,
 			);
 			productName = MagicCraft;
 			productReference = AAE92FA12E488747003C8365 /* MagicCraft.app */;
@@ -210,6 +213,7 @@
 			packageReferences = (
 				AAE92FD02E488C64003C8365 /* XCLocalSwiftPackageReference "../../../WalletCore" */,
 				AAE92FE32E4890A1003C8365 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
+				AAE92FF42E48A546003C8365 /* XCRemoteSwiftPackageReference "web3swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAE92FA22E488747003C8365 /* Products */;
@@ -583,6 +587,14 @@
 				minimumVersion = 4.0.0;
 			};
 		};
+		AAE92FF42E48A546003C8365 /* XCRemoteSwiftPackageReference "web3swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/skywinder/web3swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -598,6 +610,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAE92FE32E4890A1003C8365 /* XCRemoteSwiftPackageReference "NotificationBanner" */;
 			productName = NotificationBannerSwift;
+		};
+		AAE92FF52E48A546003C8365 /* web3swift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAE92FF42E48A546003C8365 /* XCRemoteSwiftPackageReference "web3swift" */;
+			productName = web3swift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
