@@ -10,8 +10,14 @@ import SwiftUI
 struct TransactionsView: View {
     @StateObject private var vm: TransactionsViewModel
     
-    init(walletAddress: String, apiKey: String, chainConfig: ChainAPIConfig, action: String = "txlist") {
-        _vm = StateObject(wrappedValue: TransactionsViewModel(walletAddress: walletAddress, apiKey: apiKey, chainConfig: chainConfig, action: action))
+    init(walletAddress: String, apiKey: String, chainConfig: ChainAPIConfig, action: String = "txlist", chainID: Int) {
+        _vm = StateObject(wrappedValue: TransactionsViewModel(
+            walletAddress: walletAddress,
+            apiKey: apiKey,
+            chainConfig: chainConfig,
+            action: action,
+            chainID: chainID
+        ))
     }
     
     var body: some View {

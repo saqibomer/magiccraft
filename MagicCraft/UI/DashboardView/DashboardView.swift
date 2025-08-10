@@ -46,7 +46,8 @@ struct DashboardView: View {
                                             walletAddress: viewModel.walletAddress.address,
                                             apiKey: apiKey,
                                             chainConfig: chainConfig,
-                                            action: "txlist"
+                                            action: "txlist",
+                                            chainID: chainIDForChain(token.chainName)
                                         )
                                     } label: {
                                         HStack {
@@ -67,7 +68,7 @@ struct DashboardView: View {
                                         name: token.chainName,
                                         baseURL: baseURL,
                                         apiKey: apiKey,
-                                        explorerPrefix: explorerPrefix
+                                        explorerPrefix: explorerPrefix,
                                     )
                                     
                                     NavigationLink {
@@ -75,7 +76,8 @@ struct DashboardView: View {
                                             walletAddress: viewModel.walletAddress.address,
                                             apiKey: apiKey,
                                             chainConfig: chainConfig,
-                                            action: "tokentx"
+                                            action: "tokentx",
+                                            chainID: chainIDForChain(token.chainName)
                                         )
                                     } label: {
                                         HStack {
@@ -87,7 +89,6 @@ struct DashboardView: View {
                                 }
                             }
                         }
-                        
                     }
                     .navigationTitle("Dashboard")
                 }
@@ -102,13 +103,13 @@ struct DashboardView: View {
     private func baseURLForChain(_ chainName: String, action: String) -> String {
         switch chainName {
         case "Ethereum":
-            return "https://api.etherscan.io/api"
+            return "https://api.etherscan.io/v2/api"
         case "Binance Smart Chain":
-            return "https://api.bscscan.com/api"
+            return "https://api.etherscan.io/v2/api"
         case "Polygon":
-            return "https://api.polygonscan.com/api"
+            return "https://api.etherscan.io/v2/api"
         default:
-            return "https://api.etherscan.io/api" // fallback
+            return "https://api.etherscan.io/v2/api" // fallback
         }
     }
     
@@ -116,13 +117,27 @@ struct DashboardView: View {
     private func explorerPrefixForChain(_ chainName: String) -> String {
         switch chainName {
         case "Ethereum":
-            return "https://etherscan.io/tx/"
+            return "https://api.etherscan.io/v2/tx/"
         case "Binance Smart Chain":
-            return "https://bscscan.com/tx/"
+            return "https://api.etherscan.io/v2/tx/"
         case "Polygon":
-            return "https://polygonscan.com/tx/"
+            return "https://api.etherscan.io/v2/tx/"
         default:
-            return "https://etherscan.io/tx/"
+            return "https://api.etherscan.io/v2/tx/"
+        }
+    }
+    
+    // Helper to get chainID for Etherscan v2 API (required param)
+    private func chainIDForChain(_ chainName: String) -> Int {
+        switch chainName {
+        case "Ethereum":
+            return 1
+        case "Binance Smart Chain":
+            return 56
+        case "Polygon":
+            return 137
+        default:
+            return 1
         }
     }
 }

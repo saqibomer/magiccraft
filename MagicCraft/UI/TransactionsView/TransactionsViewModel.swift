@@ -19,15 +19,17 @@ class TransactionsViewModel: ObservableObject {
     private let apiKey: String
     private let action: String  // "txlist", "tokentx", or "txlistinternal"
     private let limit: Int
+    private let chainID: Int   // Add this to hold the chain ID
     
     let chainConfig: ChainAPIConfig
     
-    init(walletAddress: String, apiKey: String, chainConfig: ChainAPIConfig, action: String = "txlist", limit: Int = 5) {
+    init(walletAddress: String, apiKey: String, chainConfig: ChainAPIConfig, action: String = "txlist", limit: Int = 5, chainID: Int) {
         self.walletAddress = walletAddress
         self.apiKey = apiKey
         self.chainConfig = chainConfig
         self.action = action
         self.limit = limit
+        self.chainID = chainID
     }
     
     func fetchTransactions() async {
@@ -35,12 +37,14 @@ class TransactionsViewModel: ObservableObject {
         errorMessage = nil
         
         guard let url = URL(string:
-            "\(chainConfig.baseURL)?module=account&action=\(action)&address=\(walletAddress)&startblock=0&endblock=99999999&sort=desc&apikey=\(apiKey)"
+            "\(chainConfig.baseURL)?module=account&action=\(action)&address=\(walletAddress)&startblock=0&endblock=99999999&sort=desc&apikey=\(apiKey)&chainid=\(chainID)"
         ) else {
             errorMessage = "Invalid URL"
             isLoading = false
             return
         }
+        
+        print(url.absoluteString)
         
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
