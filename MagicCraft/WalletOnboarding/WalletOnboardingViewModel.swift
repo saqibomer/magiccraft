@@ -14,6 +14,7 @@ class WalletOnboardingViewModel: ObservableObject {
     @Published var mnemonic: String = ""
     @Published var isWalletCreated = false
     @Published var isUnlocked = false
+    @Published var successMessage: String?
     @Published var errorMessage: String?
     @Published var passcode: String = ""
 
@@ -52,10 +53,19 @@ class WalletOnboardingViewModel: ObservableObject {
             errorMessage = "Mnemonic encoding error"
             return
         }
-        let encrypted = try CryptoManager.encrypt(mnemonicData, withKey: key)
-        let success = KeychainManager.shared.save(encrypted, service: keychainService, account: keychainAccount)
-        if !success {
-            errorMessage = "Failed to save mnemonic"
+        do {
+            let encrypted = try CryptoManager.encrypt(mnemonicData, withKey: key)
+            let success = KeychainManager.shared.save(encrypted, service: keychainService, account: keychainAccount)
+            if success {
+                successMessage = "Wallet saved successfully!"
+                errorMessage = nil  // Clear previous error if any
+            } else {
+                errorMessage = "Failed to save mnemonic"
+                successMessage = nil
+            }
+        } catch {
+            errorMessage = "Encryption failed: \(error.localizedDescription)"
+            successMessage = nil
         }
     }
 

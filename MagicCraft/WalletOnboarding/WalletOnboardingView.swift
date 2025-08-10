@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import NotificationBannerSwift
 
 struct WalletOnboardingView: View {
     @StateObject private var vm = WalletOnboardingViewModel()
@@ -65,5 +66,15 @@ struct WalletOnboardingView: View {
             }
         }
         .padding()
+        .onReceive(vm.$errorMessage.compactMap { $0 }) { message in
+            let banner = NotificationBanner(title: "Error", subtitle: message, style: .danger)
+            banner.show()
+            vm.errorMessage = nil
+        }
+        .onReceive(vm.$successMessage.compactMap { $0 }) { message in
+            let banner = NotificationBanner(title: "Success", subtitle: message, style: .success)
+            banner.show()
+            vm.successMessage = nil
+        }
     }
 }
