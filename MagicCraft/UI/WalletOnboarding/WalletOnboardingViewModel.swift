@@ -116,13 +116,4 @@ extension WalletOnboardingViewModel {
         }
     }
     
-    func readEtherscanAPIKey() -> String? {
-        if let data = KeychainManager.shared.read(
-            service: KeychainConstants.etherscanService,
-            account: KeychainConstants.etherscanAccount
-        ) {
-            return String(data: data, encoding: .utf8)
-        }
-        return nil
-    }
 }
