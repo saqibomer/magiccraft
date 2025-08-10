@@ -8,12 +8,10 @@
 import Foundation
 import Combine
 import WalletCore
-import LocalAuthentication
 
 class WalletOnboardingViewModel: ObservableObject {
     @Published var mnemonic: String = ""
     @Published var isWalletCreated = false
-    @Published var isUnlocked = false
     @Published var successMessage: String?
     @Published var errorMessage: String?
     @Published var passcode: String = ""
@@ -25,7 +23,12 @@ class WalletOnboardingViewModel: ObservableObject {
     var onWalletCreated: (() -> Void)?
 
     // MARK: - Create new mnemonic
-    func createNewWallet() {
+    func createNewWallet(_ apiKey: String) {
+        if apiKey == "" {
+            errorMessage = "Api key required"
+            return
+        }
+        saveEtherscanAPIKey(apiKey)
         guard let hdWallet = HDWallet(strength: 128, passphrase: "") else {
             errorMessage = "Failed to create wallet"
             return
@@ -35,7 +38,12 @@ class WalletOnboardingViewModel: ObservableObject {
     }
 
     // MARK: - Import existing mnemonic
-    func importWallet(from mnemonicWords: String) {
+    func importWallet(from mnemonicWords: String, apiKey: String) {
+        if apiKey == "" {
+            errorMessage = "Api key required"
+            return
+        }
+        saveEtherscanAPIKey(apiKey)
         guard let _ = HDWallet(mnemonic: mnemonicWords, passphrase: "") else {
             errorMessage = "Invalid mnemonic phrase"
             return
@@ -73,38 +81,48 @@ class WalletOnboardingViewModel: ObservableObject {
     }
 
     // MARK: - Unlock wallet with passcode
-    func unlockWallet(with passcode: String) throws {
-        guard let encryptedData = KeychainManager.shared.read(service: keychainService, account: keychainAccount) else {
-            errorMessage = "No wallet found"
+//    func unlockWallet(with passcode: String) throws {
+//        guard let encryptedData = KeychainManager.shared.read(service: keychainService, account: keychainAccount) else {
+//            errorMessage = "No wallet found"
+//            return
+//        }
+//        let key = CryptoManager.key(fromPasscode: passcode)
+//        let decryptedData = try CryptoManager.decrypt(encryptedData, withKey: key)
+//        guard let recoveredMnemonic = String(data: decryptedData, encoding: .utf8) else {
+//            errorMessage = "Failed to decode mnemonic"
+//            return
+//        }
+//        mnemonic = recoveredMnemonic
+//        
+//    }
+
+}
+
+extension WalletOnboardingViewModel {
+    func saveEtherscanAPIKey(_ apiKey: String) {
+        guard let data = apiKey.data(using: .utf8) else {
+            errorMessage = "Invalid API key format"
             return
         }
-        let key = CryptoManager.key(fromPasscode: passcode)
-        let decryptedData = try CryptoManager.decrypt(encryptedData, withKey: key)
-        guard let recoveredMnemonic = String(data: decryptedData, encoding: .utf8) else {
-            errorMessage = "Failed to decode mnemonic"
-            return
-        }
-        mnemonic = recoveredMnemonic
-        isUnlocked = true
-    }
-
-    // MARK: - Unlock wallet with biometrics
-    func unlockWithBiometrics() {
-        let context = LAContext()
-        var error: NSError?
-
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your wallet") { success, _ in
-                DispatchQueue.main.async {
-                    if success {
-                        self.isUnlocked = true
-                    } else {
-                        self.errorMessage = "Biometric authentication failed"
-                    }
-                }
-            }
+        let success = KeychainManager.shared.save(
+            data,
+            service: KeychainConstants.etherscanService,
+            account: KeychainConstants.etherscanAccount
+        )
+        if success {
+            successMessage = "Etherscan API key saved!"
         } else {
-            errorMessage = "Biometrics not available"
+            errorMessage = "Failed to save Etherscan API key"
         }
+    }
+    
+    func readEtherscanAPIKey() -> String? {
+        if let data = KeychainManager.shared.read(
+            service: KeychainConstants.etherscanService,
+            account: KeychainConstants.etherscanAccount
+        ) {
+            return String(data: data, encoding: .utf8)
+        }
+        return nil
     }
 }
