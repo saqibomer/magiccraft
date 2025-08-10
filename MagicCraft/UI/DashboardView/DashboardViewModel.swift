@@ -15,10 +15,10 @@ import BigInt
 class DashboardViewModel: ObservableObject {
     @Published var nativeBalances: [TokenBalance] = []
     @Published var mcrtBalances: [TokenBalance] = []
-    @Published var recentTransactions: [Transaction] = []
     @Published var errorMessage: String?
+    @Published var isLoading: Bool = false
     
-    private let walletAddress: EthereumAddress
+    let walletAddress: EthereumAddress
     private var networks: [Web3Network] = []
     
     private let chains: [Chain] = [
@@ -63,20 +63,16 @@ class DashboardViewModel: ObservableObject {
             self.networks = tempNetworks
         }
     }
+
     
-    func fetchAllBalancesAndTransactions() async {
-        await fetchAllBalances()
-        await fetchRecentTransactions()
-    }
-    
-    private func fetchAllBalances() async {
+    func fetchAllBalances() async {
         if networks.isEmpty {
             await setupNetworks()
         }
         nativeBalances.removeAll()
         mcrtBalances.removeAll()
         errorMessage = nil
-        
+        isLoading = true
         for network in networks {
             do {
                 // Native balance
@@ -112,9 +108,10 @@ class DashboardViewModel: ObservableObject {
                 self.errorMessage = "Failed to fetch balances for \(network.network.name): \(error.localizedDescription)"
             }
         }
+        isLoading = false
     }
     
-    private func readEtherscanAPIKey() -> String? {
+    func readEtherscanAPIKey() -> String? {
         if let data = KeychainManager.shared.read(
             service: KeychainConstants.etherscanService,
             account: KeychainConstants.etherscanAccount
@@ -123,90 +120,6 @@ class DashboardViewModel: ObservableObject {
         }
         return nil
     }
-    private func fetchRecentTransactions() async {
-        guard let etherscanAPIKey = readEtherscanAPIKey() else {
-            self.errorMessage = "Failed to fetch Etherscan API Key"
-            return
-        }
-        
-        recentTransactions.removeAll()
-        let addressString = walletAddress.address
-        
-        let explorers: [(name: String, chainID: Int, txPrefix: String)] = [
-            ("Ethereum", 1, "https://etherscan.io/tx/"),
-            ("BSC", 56, "https://bscscan.com/tx/"),
-            ("Polygon", 137, "https://polygonscan.com/tx/")
-        ]
-        
-        for (name, chainID, prefix) in explorers {
-            
-            // Define both endpoints: normal txs + token transfers
-            let endpoints = [
-                ("txlist", "Native"),
-                ("tokentx", "ERC-20")
-            ]
-            
-            for (action, actionLabel) in endpoints {
-                guard let url = URL(string:
-                                        "https://api.etherscan.io/v2/api?chainid=\(chainID)&module=account&action=\(action)&address=\(addressString)&startblock=0&endblock=99999999&sort=desc&apikey=\(etherscanAPIKey)"
-                ) else { continue }
-                
-                do {
-                    let (data, response) = try await URLSession.shared.data(from: url)
-                    if let httpResponse = response as? HTTPURLResponse {
-                        print("HTTP status:", httpResponse.statusCode)
-                    }
-                    
-                    guard
-                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                        let status = json["status"] as? String, status == "1",
-                        let result = json["result"] as? [[String: Any]]
-                    else {
-                        if let message = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                           let errorMsg = message["message"] as? String {
-                            errorMessage = errorMsg
-                        }
-                        continue
-                    }
-                    
-                    let latestTxs = result.prefix(5).compactMap { tx -> Transaction? in
-                        guard
-                            let hash = tx["hash"] as? String,
-                            let from = tx["from"] as? String,
-                            let to = tx["to"] as? String,
-                            let valueStr = tx["value"] as? String,
-                            let timeStampStr = tx["timeStamp"] as? String,
-                            let timeStampInt = Double(timeStampStr),
-                            let valueBigUInt = BigUInt(valueStr)
-                        else { return nil }
-                        
-                        let date = Date(timeIntervalSince1970: timeStampInt)
-                        let valueDecimal = formatBalance(valueBigUInt, decimals: 18)
-                        
-                        return Transaction(
-                            hash: hash,
-                            from: from,
-                            to: to,
-                            value: valueDecimal,
-                            timeStamp: date,
-                            explorerUrl: "\(prefix)\(hash)"
-                        )
-                    }
-                    
-                    recentTransactions.append(contentsOf: latestTxs)
-                    
-                } catch {
-                    print("Failed to fetch \(name) \(actionLabel) transactions: \(error.localizedDescription)")
-                    errorMessage = "Failed to fetch \(name) \(actionLabel) transactions: \(error.localizedDescription)"
-                }
-            }
-        }
-        
-        // Sort by date desc
-        recentTransactions.sort { $0.timeStamp > $1.timeStamp }
-    }
-    
-    
     
     private func formatBalance(_ balance: BigUInt, decimals: Int = 18) -> Decimal {
         let divisor = BigUInt(10).power(decimals)
