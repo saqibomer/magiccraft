@@ -17,7 +17,12 @@ struct ContentView: View {
             WalletOnboardingView()
                 .environmentObject(appVM)
         case .dashboard:
-            DashboardView()
+            if let walletAddress = appVM.walletAddress {
+                    DashboardView(walletAddress: walletAddress)
+                } else {
+                    Text("No wallet address available")
+                        .foregroundColor(.red)
+                }
             // MARK: - Test code to reset keychain
 //                .onAppear {
 //                    KeychainManager.shared.delete(service: KeychainConstants.service, account: KeychainConstants.account)
