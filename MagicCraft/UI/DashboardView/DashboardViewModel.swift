@@ -15,6 +15,7 @@ import BigInt
 class DashboardViewModel: ObservableObject {
     @Published var nativeBalances: [TokenBalance] = []
     @Published var mcrtBalances: [TokenBalance] = []
+    @Published var recentTransactions: [Transaction] = []
     @Published var errorMessage: String?
     
     private let walletAddress: EthereumAddress
@@ -37,9 +38,12 @@ class DashboardViewModel: ObservableObject {
             name: "Polygon",
             rpcUrl: "https://polygon-rpc.com/",
             nativeSymbol: "MATIC",
-            mcrtContractAddress: "", //no MCRT contract on Polygon
+            mcrtContractAddress: "",
             explorerTxUrlPrefix: "https://polygonscan.com/tx/")
     ]
+    
+    // API keys for explorers (you must replace with your own keys)
+    private let etherscanAPIKey = "YOUR_ETHERSCAN_API_KEY"
     
     init?(walletAddress: String) {
         guard let ethAddress = EthereumAddress(walletAddress) else {
@@ -47,8 +51,6 @@ class DashboardViewModel: ObservableObject {
             return nil
         }
         self.walletAddress = ethAddress
-        
-        
     }
     
     func setupNetworks() async {
@@ -65,7 +67,12 @@ class DashboardViewModel: ObservableObject {
         }
     }
     
-    func fetchAllBalances() async {
+    func fetchAllBalancesAndTransactions() async {
+        await fetchAllBalances()
+        await fetchRecentTransactions()
+    }
+    
+    private func fetchAllBalances() async {
         if networks.isEmpty {
             await setupNetworks()
         }
@@ -75,7 +82,7 @@ class DashboardViewModel: ObservableObject {
         
         for network in networks {
             do {
-                // Fetch native balance
+                // Native balance
                 let nativeBalanceBigUInt = try await network.web3.eth.getBalance(for: walletAddress)
                 let nativeBalanceDecimal = formatBalance(nativeBalanceBigUInt)
                 let nativeTokenBalance = TokenBalance(
@@ -83,46 +90,96 @@ class DashboardViewModel: ObservableObject {
                     symbol: network.network.nativeSymbol,
                     balance: nativeBalanceDecimal
                 )
-                DispatchQueue.main.async {
-                    self.nativeBalances.append(nativeTokenBalance)
-                }
+                nativeBalances.append(nativeTokenBalance)
                 
-                // Fetch MCRT balance only if contract address is set
+                // MCRT balance
                 if !network.network.mcrtContractAddress.isEmpty,
                    let contractAddress = EthereumAddress(network.network.mcrtContractAddress),
                    let contract = network.web3.contract(Web3.Utils.erc20ABI, at: contractAddress),
                    let operation = contract.createReadOperation("balanceOf", parameters: [walletAddress]) {
                     
-                    do {
-                        let result = try await operation.callContractMethod()
-                        
-                        // Both "balance" and "0" keys for compatibility
-                        let rawBalance = result["balance"] ?? result["0"]
-                        if let balance = rawBalance as? BigUInt {
-                            let mcrtBalanceDecimal = formatBalance(balance)
-                            let mcrtTokenBalance = TokenBalance(
-                                chainName: network.network.name,
-                                symbol: "MCRT",
-                                balance: mcrtBalanceDecimal
-                            )
-                            DispatchQueue.main.async {
-                                self.mcrtBalances.append(mcrtTokenBalance)
-                            }
-                        }
-                    } catch {
-                        print("MCRT fetch failed for \(network.network.name): \(error.localizedDescription)")
+                    let result = try await operation.callContractMethod()
+                    let rawBalance = result["balance"] ?? result["0"]
+                    if let balance = rawBalance as? BigUInt {
+                        let mcrtBalanceDecimal = formatBalance(balance)
+                        let mcrtTokenBalance = TokenBalance(
+                            chainName: network.network.name,
+                            symbol: "MCRT",
+                            balance: mcrtBalanceDecimal
+                        )
+                        mcrtBalances.append(mcrtTokenBalance)
                     }
                 }
-                
             } catch {
-                DispatchQueue.main.async {
-                    print("Failed to fetch balances for \(network.network.name): \(error.localizedDescription)")
-                    self.errorMessage = "Failed to fetch balances for \(network.network.name): \(error.localizedDescription)"
-                }
+                print("Failed to fetch balances for \(network.network.name): \(error.localizedDescription)")
+                self.errorMessage = "Failed to fetch balances for \(network.network.name): \(error.localizedDescription)"
             }
         }
     }
     
+    private func fetchRecentTransactions() async {
+        recentTransactions.removeAll()
+        
+        let addressString = walletAddress.address
+        let explorers: [(name: String, baseURL: String, apiKey: String, prefix: String)] = [
+            ("Ethereum", "https://api.etherscan.io/api", etherscanAPIKey, "https://etherscan.io/tx/"),
+            ("BSC", "https://api.bscscan.com/api", etherscanAPIKey, "https://bscscan.com/tx/"),
+            ("Polygon", "https://api.polygonscan.com/api", etherscanAPIKey, "https://polygonscan.com/tx/")
+        ]
+        
+        for (name, baseURL, apiKey, prefix) in explorers {
+            guard !apiKey.isEmpty else {
+                print("\(name) API key missing")
+                continue
+            }
+            
+            guard let url = URL(string: "\(baseURL)?module=account&action=txlist&address=\(addressString)&startblock=0&endblock=99999999&sort=desc&apikey=\(apiKey)") else { continue }
+            
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                guard
+                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                    let status = json["status"] as? String, status == "1",
+                    let result = json["result"] as? [[String: Any]]
+                else {
+                    if let message = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                       let errorMsg = message["message"] as? String {
+                        print("\(name) API error: \(errorMsg)")
+                    }
+                    continue
+                }
+                
+                let latestFive = result.prefix(5).compactMap { tx -> Transaction? in
+                    guard
+                        let hash = tx["hash"] as? String,
+                        let from = tx["from"] as? String,
+                        let to = tx["to"] as? String,
+                        let valueStr = tx["value"] as? String,
+                        let timeStampStr = tx["timeStamp"] as? String,
+                        let timeStampInt = Double(timeStampStr),
+                        let valueBigUInt = BigUInt(valueStr)
+                    else { return nil }
+                    
+                    let date = Date(timeIntervalSince1970: timeStampInt)
+                    let valueDecimal = formatBalance(valueBigUInt, decimals: 18) // native coin
+                    
+                    return Transaction(
+                        hash: hash,
+                        from: from,
+                        to: to,
+                        value: valueDecimal,
+                        timeStamp: date,
+                        explorerUrl: "\(prefix)\(hash)"
+                    )
+                }
+                
+                recentTransactions.append(contentsOf: latestFive)
+            } catch {
+                print("Failed to fetch transactions for \(name): \(error.localizedDescription)")
+            }
+        }
+    }
+
     
     private func formatBalance(_ balance: BigUInt, decimals: Int = 18) -> Decimal {
         let divisor = BigUInt(10).power(decimals)

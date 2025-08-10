@@ -47,11 +47,15 @@ struct DashboardView: View {
                         }
                     }
                 }
+                ForEach(viewModel.recentTransactions) { tx in
+                    Link(tx.hash, destination: URL(string: tx.explorerUrl)!)
+                }
+
             }
             .navigationTitle("Dashboard")
             .task {
                 // Refresh balances on appear
-                await viewModel.fetchAllBalances()
+                await viewModel.fetchAllBalancesAndTransactions()
             }
         }
     }
