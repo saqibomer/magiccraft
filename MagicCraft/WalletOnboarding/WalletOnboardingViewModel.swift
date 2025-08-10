@@ -19,8 +19,10 @@ class WalletOnboardingViewModel: ObservableObject {
     @Published var passcode: String = ""
 
     private var cancellables = Set<AnyCancellable>()
-    private let keychainService = "com.kaboomlab.MagicCraft"
-    private let keychainAccount = "mnemonic"
+    private let keychainService = KeychainConstants.service
+    private let keychainAccount = KeychainConstants.account
+    
+    var onWalletCreated: (() -> Void)?
 
     // MARK: - Create new mnemonic
     func createNewWallet() {
@@ -58,7 +60,8 @@ class WalletOnboardingViewModel: ObservableObject {
             let success = KeychainManager.shared.save(encrypted, service: keychainService, account: keychainAccount)
             if success {
                 successMessage = "Wallet saved successfully!"
-                errorMessage = nil  // Clear previous error if any
+                errorMessage = nil
+                onWalletCreated?()
             } else {
                 errorMessage = "Failed to save mnemonic"
                 successMessage = nil

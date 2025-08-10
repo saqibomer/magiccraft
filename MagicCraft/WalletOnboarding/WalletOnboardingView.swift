@@ -9,6 +9,7 @@ import SwiftUI
 import NotificationBannerSwift
 
 struct WalletOnboardingView: View {
+    @EnvironmentObject var appVM: MagicCraftAppViewModel
     @StateObject private var vm = WalletOnboardingViewModel()
     @State private var importMnemonicText = ""
     @State private var passcodeText = ""
@@ -75,6 +76,11 @@ struct WalletOnboardingView: View {
             let banner = NotificationBanner(title: "Success", subtitle: message, style: .success)
             banner.show()
             vm.successMessage = nil
+        }
+        .onAppear {
+            vm.onWalletCreated = {
+                appVM.walletCreated()
+            }
         }
     }
 }
