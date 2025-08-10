@@ -79,7 +79,7 @@ struct WalletOnboardingView: View {
         }
         .onAppear {
             vm.onWalletCreated = {
-                appVM.walletCreated()
+//                appVM.walletCreated(with: vm)
             }
         }
     }

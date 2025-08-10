@@ -6,16 +6,54 @@
 //
 
 import SwiftUI
-import SwiftData
+
+import SwiftUI
 
 struct DashboardView: View {
+    @StateObject private var viewModel: DashboardViewModel
+    
+    init(walletAddress: String) {
+            // Initialize without async
+        _viewModel = StateObject(wrappedValue: DashboardViewModel(walletAddress: walletAddress)!)
+    }
     
     var body: some View {
-        Text("Dashboard")
-    } 
-    
+        NavigationView {
+            VStack {
+                if let error = viewModel.errorMessage {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                        .padding()
+                }
+                
+                List {
+                    Section(header: Text("Native Balances")) {
+                        ForEach(viewModel.nativeBalances) { token in
+                            HStack {
+                                Text(token.chainName)
+                                Spacer()
+                                Text("\(token.balance, format: .number) \(token.symbol)")
+                            }
+                        }
+                    }
+                    
+                    Section(header: Text("MCRT Balances")) {
+                        ForEach(viewModel.mcrtBalances) { token in
+                            HStack {
+                                Text(token.chainName)
+                                Spacer()
+                                Text("\(token.balance, format: .number) \(token.symbol)")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Dashboard")
+            .task {
+                // Refresh balances on appear
+                await viewModel.fetchAllBalances()
+            }
+        }
+    }
 }
 
-#Preview {
-    ContentView()
-}
