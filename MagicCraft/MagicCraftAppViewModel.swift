@@ -26,10 +26,8 @@ class MagicCraftAppViewModel: ObservableObject {
     
     func checkWalletExistence() {
         if let _ = KeychainManager.shared.read(service: keychainService, account: keychainAccount) {
-            // Wallet data exists
             appState = .dashboard
-        } else {
-            // No wallet data
+        } else { 
             appState = .onboarding
         }
     }

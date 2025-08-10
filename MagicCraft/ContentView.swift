@@ -18,6 +18,11 @@ struct ContentView: View {
                 .environmentObject(appVM)
         case .dashboard:
             DashboardView()
+            // MARK: - Test code to reset keychain
+//                .onAppear {
+//                    KeychainManager.shared.delete(service: KeychainConstants.service, account: KeychainConstants.account)
+//                    appVM.checkWalletExistence()
+//                }
         }
         
     }
