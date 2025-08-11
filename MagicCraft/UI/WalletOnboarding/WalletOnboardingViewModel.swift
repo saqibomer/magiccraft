@@ -80,22 +80,6 @@ class WalletOnboardingViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Unlock wallet with passcode
-//    func unlockWallet(with passcode: String) throws {
-//        guard let encryptedData = KeychainManager.shared.read(service: keychainService, account: keychainAccount) else {
-//            errorMessage = "No wallet found"
-//            return
-//        }
-//        let key = CryptoManager.key(fromPasscode: passcode)
-//        let decryptedData = try CryptoManager.decrypt(encryptedData, withKey: key)
-//        guard let recoveredMnemonic = String(data: decryptedData, encoding: .utf8) else {
-//            errorMessage = "Failed to decode mnemonic"
-//            return
-//        }
-//        mnemonic = recoveredMnemonic
-//        
-//    }
-
 }
 
 extension WalletOnboardingViewModel {

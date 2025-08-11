@@ -31,6 +31,7 @@ struct WalletOnboardingView: View {
                             vm.passcode = passcodeText
                             do {
                                 try vm.saveMnemonicToKeychain()
+                                appVM.appState = .dashboard
                             } catch {
                                 vm.errorMessage = error.localizedDescription
                             }

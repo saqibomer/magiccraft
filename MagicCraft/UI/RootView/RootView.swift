@@ -54,9 +54,6 @@ struct RootView: View {
             NotificationBanner(title: "Success", subtitle: message, style: .success).show()
             vm.successMessage = nil
         }
-        .onAppear{
-            vm.unlockWithBiometrics()
-        }
     }
 }
 
