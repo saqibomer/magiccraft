@@ -56,10 +56,12 @@ All assets are stored in keychain for safe storage
 
 ### Features
 
-- Biometric 
-- Swift 5.7+
-- CocoaPods or Swift Package Manager for dependency management
-- Compatible iOS device or Simulator running iOS 15+
+- Biometric verification and lock when app goes to background
+- Wallet setup
+- Balance for chains
+- Transactions list
+- QR code scan for sending transaction
+- QR code for wallet
 
 ### Setup
 
