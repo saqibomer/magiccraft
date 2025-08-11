@@ -9,6 +9,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var viewModel: DashboardViewModel
+    @State private var showReceiveView = false
+    @State private var showSendView = false
+
     
     init(walletAddress: String) {
         _viewModel = StateObject(wrappedValue: DashboardViewModel(walletAddress: walletAddress)!)
@@ -19,8 +22,9 @@ struct DashboardView: View {
             if viewModel.isLoading {
                 ProgressView("Loading balance...")
                     .padding()
-            } else {
-                NavigationView {
+            }
+            else {
+                NavigationStack {
                     VStack {
                         if let error = viewModel.errorMessage {
                             Text("Error: \(error)")
@@ -91,12 +95,36 @@ struct DashboardView: View {
                         }
                     }
                     .navigationTitle("Dashboard")
+                    .navigationDestination(isPresented: $showReceiveView) {
+                        ReceiveView(viewModel: ReceiveViewModel(walletAddress: viewModel.walletAddress.address))
+                    }
+                    .toolbar {
+                            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                                Button {
+                                    showReceiveView = true
+                                } label: {
+                                    Image(systemName: "qrcode")
+                                        .imageScale(.large)
+                                }
+                                Button {
+                                    showSendView = true
+                                } label: {
+                                    Image(systemName: "paperplane.fill") // send icon
+                                        .imageScale(.large)
+                                }
+                            }
+                        }
                 }
+                
+                
+                
             }
         }
         .task {
             await viewModel.fetchAllBalances()
         }
+        
+            
     }
     
     // Helper to get baseURL for a chain and action
