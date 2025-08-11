@@ -11,6 +11,7 @@ import NotificationBannerSwift
 struct RootView: View {
     @StateObject var appVM = MagicCraftAppViewModel()
     @StateObject var vm = RootViewViewModel()
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         Group {
@@ -34,12 +35,6 @@ struct RootView: View {
             }
             else if let walletAddress = appVM.walletAddress {
                 DashboardView(walletAddress: walletAddress)
-                    .onAppear {
-                        //                        KeychainManager.shared.delete(
-                        //                            service: KeychainConstants.service,
-                        //                            account: KeychainConstants.account
-                        //                        )
-                    }
             }
             else {
                 WalletOnboardingView()
@@ -53,6 +48,11 @@ struct RootView: View {
         .onReceive(vm.$successMessage.compactMap { $0 }) { message in
             NotificationBanner(title: "Success", subtitle: message, style: .success).show()
             vm.successMessage = nil
+        }
+        .onChange(of: scenePhase) { oldValue, newValue in
+            if newValue == .background {
+                vm.isUnlocked = false
+            }
         }
     }
 }

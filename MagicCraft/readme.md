@@ -54,6 +54,13 @@ All assets are stored in keychain for safe storage
 - CocoaPods or Swift Package Manager for dependency management
 - Compatible iOS device or Simulator running iOS 15+
 
+### Features
+
+- Biometric 
+- Swift 5.7+
+- CocoaPods or Swift Package Manager for dependency management
+- Compatible iOS device or Simulator running iOS 15+
+
 ### Setup
 
 1. **Clone the repository**
