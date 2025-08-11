@@ -98,6 +98,9 @@ struct DashboardView: View {
                     .navigationDestination(isPresented: $showReceiveView) {
                         ReceiveView(viewModel: ReceiveViewModel(walletAddress: viewModel.walletAddress.address))
                     }
+                    .navigationDestination(isPresented: $showSendView) {
+                        SendView(viewModel: SendViewModel())
+                    }
                     .toolbar {
                             ToolbarItemGroup(placement: .navigationBarTrailing) {
                                 Button {
