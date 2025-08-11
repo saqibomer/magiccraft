@@ -39,6 +39,9 @@ This pattern improves code separation, testability, and maintainability.
 - Estimate gas fees with detailed confirmation dialogs before sending transactions
 - Secure private key storage and retrieval
 - Multi-chain support with dynamic RPC URLs and contract addresses
+- Biometric verification and lock when app goes to background
+- QR code scan for sending transaction
+- QR code for wallet
 
 ---
 
@@ -54,14 +57,6 @@ All assets are stored in keychain for safe storage
 - CocoaPods or Swift Package Manager for dependency management
 - Compatible iOS device or Simulator running iOS 15+
 
-### Features
-
-- Biometric verification and lock when app goes to background
-- Wallet setup
-- Balance for chains
-- Transactions list
-- QR code scan for sending transaction
-- QR code for wallet
 
 ### Setup
 
